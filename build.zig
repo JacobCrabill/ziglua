@@ -46,9 +46,7 @@ pub fn build(b: *Build) void {
             else => lua_setup.configure(b, target, optimize, upstream, lang, shared),
         };
 
-        // Expose the Lua artifact, and get an install step that header translation can refer to
-        const install_lib = b.addInstallArtifact(lib, .{});
-        b.getInstallStep().dependOn(&install_lib.step);
+        b.installArtifact(lib);
 
         switch (lang) {
             .luau => {
@@ -74,7 +72,6 @@ pub fn build(b: *Build) void {
             .optimize = optimize,
         });
         c_headers.addIncludePath(lib.getEmittedIncludeTree());
-        c_headers.step.dependOn(&install_lib.step);
 
         const ziglua_c = b.addModule("ziglua-c", .{
             .root_source_file = c_headers.getOutput(),

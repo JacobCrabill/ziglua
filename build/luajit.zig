@@ -6,20 +6,15 @@ const Step = std.Build.Step;
 pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, upstream: *Build.Dependency, shared: bool) *Step.Compile {
     // TODO: extract this to the main build function because it is shared between all specialized build functions
 
-    const lib: *Step.Compile = if (shared)
-        b.addSharedLibrary(.{
-            .name = "lua",
+    const lib: *Step.Compile = b.addLibrary(.{
+        .name = "lua",
+        .linkage = if (shared) .dynamic else .static,
+        .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
             .unwind_tables = .sync,
-        })
-    else
-        b.addStaticLibrary(.{
-            .name = "lua",
-            .target = target,
-            .optimize = optimize,
-            .unwind_tables = .sync,
-        });
+        }),
+    });
 
     // Compile minilua interpreter used at build time to generate files
     const minilua = b.addExecutable(.{

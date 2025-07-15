@@ -21,20 +21,15 @@ pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.
         else => unreachable,
     };
 
-    const lib = if (shared)
-        b.addSharedLibrary(.{
-            .name = "lua",
+    const lib = b.addLibrary(.{
+        .name = "lua",
+        .linkage = if (shared) .dynamic else .static,
+        .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
-            .version = version,
-        })
-    else
-        b.addStaticLibrary(.{
-            .name = "lua",
-            .target = target,
-            .optimize = optimize,
-            .version = version,
-        });
+        }),
+        .version = version,
+    });
 
     lib.addIncludePath(upstream.path("src"));
 

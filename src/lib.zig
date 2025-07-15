@@ -4289,7 +4289,11 @@ pub const Lua = opaque {
     /// * Pushes: `0`
     /// * Errors: `other`
     pub fn openBit32(lua: *Lua) void {
-        lua.requireF(c.LUA_BITLIBNAME, c.luaopen_bit32, true);
+        if (lang == .luajit) {
+            lua.requireF(c.LUA_BITLIBNAME, c.luaopen_bit, true);
+        } else {
+            lua.requireF(c.LUA_BITLIBNAME, c.luaopen_bit32, true);
+        }
         if (lang == .lua52 or lang == .lua53 or lang == .lua54) lua.pop(1);
     }
 
