@@ -6,29 +6,26 @@ const Step = std.Build.Step;
 pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, upstream: *Build.Dependency, shared: bool) *Step.Compile {
     // TODO: extract this to the main build function because it is shared between all specialized build functions
 
-    const lib: *Step.Compile = if (shared)
-        b.addSharedLibrary(.{
-            .name = "lua",
+    const lib: *Step.Compile = b.addLibrary(.{
+        .name = "lua",
+        .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
             .unwind_tables = .sync,
-        })
-    else
-        b.addStaticLibrary(.{
-            .name = "lua",
-            .target = target,
-            .optimize = optimize,
-            .unwind_tables = .sync,
-        });
+        }),
+        .linkage = if (shared) .dynamic else .static,
+    });
 
     // Compile minilua interpreter used at build time to generate files
     const minilua = b.addExecutable(.{
         .name = "minilua",
-        .target = target, // TODO ensure this is the host
-        .optimize = .ReleaseSafe,
+        .root_module = b.createModule(.{
+            .target = b.graph.host,
+            .optimize = .ReleaseSafe,
+        }),
     });
     minilua.linkLibC();
-    minilua.root_module.sanitize_c = false;
+    minilua.root_module.sanitize_c = .off;
     minilua.addCSourceFile(.{ .file = upstream.path("src/host/minilua.c") });
 
     // Generate the buildvm_arch.h file using minilua
@@ -75,11 +72,13 @@ pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.
     // Compile the buildvm executable used to generate other files
     const buildvm = b.addExecutable(.{
         .name = "buildvm",
-        .target = target, // TODO ensure this is the host
-        .optimize = .ReleaseSafe,
+        .root_module = b.createModule(.{
+            .target = b.graph.host,
+            .optimize = .ReleaseSafe,
+        }),
     });
     buildvm.linkLibC();
-    buildvm.root_module.sanitize_c = false;
+    buildvm.root_module.sanitize_c = .off;
 
     // Needs to run after the buildvm_arch.h and luajit.h files are generated
     buildvm.step.dependOn(&dynasm_run.step);
@@ -183,7 +182,7 @@ pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.
         .files = &luajit_vm,
     });
 
-    lib.root_module.sanitize_c = false;
+    lib.root_module.sanitize_c = .off;
 
     lib.installHeader(upstream.path("src/lua.h"), "lua.h");
     lib.installHeader(upstream.path("src/lualib.h"), "lualib.h");

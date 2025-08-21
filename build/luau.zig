@@ -4,10 +4,13 @@ const Build = std.Build;
 const Step = std.Build.Step;
 
 pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, upstream: *Build.Dependency, luau_use_4_vector: bool) *Step.Compile {
-    const lib = b.addStaticLibrary(.{
+    const lib = b.addLibrary(.{
         .name = "luau",
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        }),
+        .linkage = .static,
         .version = std.SemanticVersion{ .major = 0, .minor = 653, .patch = 0 },
     });
 

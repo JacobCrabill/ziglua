@@ -21,20 +21,15 @@ pub fn configure(b: *Build, target: Build.ResolvedTarget, optimize: std.builtin.
         else => unreachable,
     };
 
-    const lib = if (shared)
-        b.addSharedLibrary(.{
-            .name = "lua",
+    const lib = b.addLibrary(.{
+        .name = "lua",
+        .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
-            .version = version,
-        })
-    else
-        b.addStaticLibrary(.{
-            .name = "lua",
-            .target = target,
-            .optimize = optimize,
-            .version = version,
-        });
+        }),
+        .linkage = if (shared) .dynamic else .static,
+        .version = version,
+    });
 
     lib.addIncludePath(upstream.path("src"));
 
@@ -96,8 +91,10 @@ fn patchFile(
 ) Build.LazyPath {
     const patch = b.addExecutable(.{
         .name = "patch",
-        .root_source_file = b.path("build/patch.zig"),
-        .target = target,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("build/patch.zig"),
+            .target = target,
+        }),
     });
 
     const patch_run = b.addRunArtifact(patch);
