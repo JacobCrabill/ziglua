@@ -57,6 +57,8 @@ pub fn build(b: *Build) void {
             }),
         };
 
+        b.installArtifact(lib);
+
         // Expose the Lua artifact, and get an install step that header translation can refer to
         const install_lib = b.addInstallArtifact(lib, .{});
         b.getInstallStep().dependOn(&install_lib.step);
