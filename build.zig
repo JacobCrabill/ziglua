@@ -93,7 +93,7 @@ pub fn build(b: *Build) void {
         b.modules.put("ziglua-c", ziglua_c) catch @panic("OOM");
 
         zlua.addImport("c", ziglua_c);
-    }
+    } else return;
 
     // Tests
     const tests = b.addTest(.{
